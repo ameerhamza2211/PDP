@@ -1,3 +1,40 @@
+<style>
+  .select-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.select-wrapper .select__select {
+  width: 100%;
+  padding-right: 30px;
+  appearance: none; 
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.select-wrapper .icon-caret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; 
+  width: 10px;
+  height: 6px;
+}
+
+#custom-width-selector {
+  border: 1px solid #000;
+}
+#custom-width-selector:hover {
+  border: 1px solid #000;
+}
+label {
+  font-size: 13px;
+}
+
+</style>
+
 {% comment %}
   Renders product variant-picker
 
@@ -14,7 +51,56 @@
     data-section="{{ section.id }}"
     {{ block.shopify_attributes }}
   >
+
+    {%- comment -%}
+      1. GET THE METAFIELD DATA
+    {%- endcomment -%}
+    {%- assign width_map = product.metafields.custom.width_to_panel_map.value -%}
+
+    {%- comment -%}
+      THIS IS THE NEW LINE:
+      Get the currently selected variant's panel count (Option 1)
+    {%- endcomment -%}
+    {%- assign current_panel_selection = product.selected_or_first_available_variant.option1 -%}
+
+    {%- comment -%}
+      2. CREATE THE CUSTOM "WIDTH" SELECTOR
+    {%- endcomment -%}
+  {%- if width_map != blank -%}
+  <div class="product-form_input product-form_width-selector">
+    <label for="custom-width-selector">Select Width</label>
+    <div class="select-wrapper">
+      <select id="custom-width-selector" class="select__select" name="properties[Width]">
+        {%- for item in width_map -%}
+          <option
+            value="{{ item.panel_count | escape }}"
+            {%- if current_panel_selection == item.panel_count -%}
+              selected="selected"
+            {%- endif -%}
+          >
+            {{ item.width_label }}
+          </option>
+        {%- endfor -%}
+      </select>
+      <svg class="icon icon-caret" viewBox="0 0 10 6">
+        <path fill="currentColor" fill-rule="evenodd" d="M9.354.646a.5.5 0 0 0-.708 0L5 4.293 1.354.646a.5.5 0 0 0-.708.708l4 4a.5.5 0 0 0 .708 0l4-4a.5.5 0 0 0 0-.708" clip-rule="evenodd"></path>
+      </svg>
+    </div>
+  </div>
+{%- endif -%}
+
     {%- for option in product.options_with_values -%}
+      {%- comment -%}
+        ADD THIS CODE TO HIDE THE 'Fabric Panels' OPTION
+      {%- endcomment -%}
+      {%- liquid
+        assign option_name_downcased = option.name | downcase
+        assign is_hidden_option = false
+        if option_name_downcased == 'fabric panels'
+          assign is_hidden_option = true
+        endif
+      -%}
+
       {%- liquid
         assign swatch_count = option.values | map: 'swatch' | compact | size
         assign picker_type = block.settings.picker_type

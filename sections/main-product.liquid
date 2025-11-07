@@ -85,6 +85,11 @@
         >
           {%- assign product_form_id = 'product-form-' | append: section.id -%}
 
+           {% comment %} products-varients {% endcomment %}
+          <script type="application/json" id="ProductVariants-{{ section.id }}">
+            {{ product.variants | json }}
+          </script>
+
           {%- for block in section.blocks -%}
             {%- case block.type -%}
               {%- when '@app' -%}
@@ -2266,3 +2271,39 @@
   ]
 }
 {% endschema %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Get the main "product info" section, which is stable.
+    const productInfoContainer = document.querySelector('#ProductInfo-{{ section.id }}');
+
+    if (!productInfoContainer) {
+      console.error('Curtain Linker: Could not find the product info container.');
+      return;
+    }
+
+    // 2. Attach ONE listener to this stable parent.
+    //    This is called "event delegation".
+    productInfoContainer.addEventListener('change', (event) => {
+      // 3. Check if the element that changed was our custom width selector
+      if (event.target.id === 'custom-width-selector') {
+        // 4. If it was, find the real "Fabric Panels" dropdown
+        const realPanelSelector = document.querySelector('[name="options[Fabric Panels]"]');
+
+        if (realPanelSelector) {
+          // 5. Get the value from our custom dropdown
+          const newPanelCount = event.target.value;
+
+          // 6. Set the value on the real, hidden dropdown
+          realPanelSelector.value = newPanelCount;
+
+          // 7. "Fake" a change event, so the theme's own script wakes up
+          //    and updates the price and variant.
+          realPanelSelector.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+          console.warn('Curtain Linker: Custom width changed, but could not find real panel selector.');
+        }
+      }
+    });
+  });
+</script>
